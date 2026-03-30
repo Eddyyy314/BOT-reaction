@@ -117,7 +117,7 @@ function randomUUID() {
 }
 
 // ─── FETCH RECENT POSTS ───────────────────────────────────
-async function getRecentPosts(limit = 20) {
+async function getRecentPosts(limit = 50) {
   const { data, error } = await supabase
     .from("posts")
     .select("id")
@@ -208,34 +208,30 @@ async function reactToComment(commentId, postId) {
 
 // ─── MAIN ─────────────────────────────────────────────────
 async function main() {
-  console.log("🤖 Reactor bot avviato...");
+  console.log("🤖 Reactor bot avviato — obiettivo: 100 reazioni sui post...");
 
-  const posts = await getRecentPosts(20);
+  const posts = await getRecentPosts(50);
   if (posts.length === 0) {
     console.log("Nessun post trovato.");
     return;
   }
 
-  // Scegli 1-3 post casuali su cui agire
-  const numActions = Math.floor(Math.random() * 3) + 1;
+  const TOTAL_REACTIONS = 100;
+  let done = 0;
 
-  for (let i = 0; i < numActions; i++) {
+  for (let i = 0; i < TOTAL_REACTIONS; i++) {
     const post = pickRandom(posts);
-    const action = Math.random();
+    await reactToPost(post.id);
+    done++;
 
-    if (action < 0.5) {
-      // 50% chance: react al post
-      await reactToPost(post.id);
-    } else {
-      // 50% chance: commenta il post
-      await commentOnPost(post.id);
+    // Pausa ogni 10 reazioni per non martellare il DB
+    if (done % 10 === 0) {
+      console.log(`⏳ ${done}/${TOTAL_REACTIONS} reazioni completate...`);
+      await new Promise((r) => setTimeout(r, 300));
     }
-
-    // piccola pausa tra azioni
-    await new Promise((r) => setTimeout(r, 500));
   }
 
-  // 30% chance: reagisce anche a un commento recente
+  // 30% chance: reagisce anche a qualche commento recente
   if (Math.random() < 0.3) {
     const comments = await getRecentComments(10);
     if (comments.length > 0) {
@@ -244,7 +240,7 @@ async function main() {
     }
   }
 
-  console.log("✅ Bot completato.");
+  console.log(`✅ Bot completato — ${done} reazioni distribuite sui post.`);
 }
 
 main();

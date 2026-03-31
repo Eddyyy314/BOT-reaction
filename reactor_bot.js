@@ -9,103 +9,73 @@ const supabase = createClient(
 const EMOJIS = ["❤️", "🔥", "😂", "💀", "😮"];
 
 const COMMENTS = [
-  // stile giovane veloce
-  "palese",
-  "clamoroso",
-  "true af",
-  "no cap",
-  "assurdo",
-  "this is so real",
-  "lowkey d'accordo",
-  "fr fr",
-  "bro has a point",
-  "non potevo dirlo meglio",
-  "esatto però",
-  "ceh",
-  "too real",
-  "finalmente qualcuno lo dice",
-  "letteralmente io",
-  "dipende ma tendenzialmente sì",
-  "unpopular? per me è ovvio",
-  "non fa una piega",
-  "okay ma hai ragione",
-  "questo mi rappresenta",
-  "mi hai letto nel pensiero",
-  "sempre stato convinto di questo",
-  "chi non capisce questo non capisce niente",
-  "era ora che qualcuno lo dicesse",
-  "bomba questo",
-  "periodT",
-  "based",
-  "W take",
-  "hard agree",
-  "sto piangendo perché è vero",
-  "chi ha scritto questo mi conosce",
-  "okay questo è valido",
-  "non si può non essere d'accordo",
-  "giusto ma anche no in certi casi",
-  "dipende dal contesto però",
-  "in realtà sì",
-  "veramente clamoroso",
-  "assurdo quanto sia vero",
-  "mi fermo qui perché sennò scrivo un saggio",
-  "qualcuno screenshot questo",
-  "salvato",
-  "mando questo ai miei amici",
-
-  // stile medio
-  "mi trovo d'accordo, purtroppo",
-  "ogni volta che ci penso arrivo alla stessa conclusione",
-  "non è un'opinione sono i fatti",
-  "chi non lo vede non vuole vederlo",
-  "cambiatemi l'idea",
-  "ne parlavo proprio ieri",
-  "esatto, non c'è altro da aggiungere",
-  "veramente non ho parole per descriverlo",
-  "detto anch'io mille volte",
-  "finalmente qualcuno lo scrive",
-  "questa è la risposta giusta",
-  "ma poi ceh, è ovvio no",
-  "concordo al 100%",
-  "e chi non è d'accordo ha torto",
-  "questa cosa mi fa impazzire da anni",
-  "non potrei essere più d'accordo",
-  "è esattamente così e basta",
-  "il problema è che in pochi lo capiscono",
-  "e invece nessuno lo dice mai abbastanza",
-  "rispetto per chi scrive queste cose",
-
-  // stile più serio
-  "Condivido pienamente questa riflessione.",
-  "È esattamente quello che penso da tempo.",
-  "Finalmente un'opinione sensata su questo argomento.",
-  "Non avrei saputo dirlo meglio.",
-  "Questo è un punto che troppo spesso viene ignorato.",
-  "Una prospettiva interessante e condivisibile.",
-  "Sono completamente d'accordo con questa visione.",
-  "Ci vuole coraggio a dirlo, ma è la verità.",
-  "È raro trovare qualcuno che la pensi così chiaramente.",
-  "Questa è esattamente la posizione corretta sulla questione.",
-  "Un'osservazione acuta e puntuale.",
-  "Non potrei essere più in disaccordo, ma rispetto l'opinione.",
-  "Questa cosa andrebbe detta più spesso.",
-  "Difficile non essere d'accordo con questa analisi.",
-  "Un punto di vista che condivido profondamente.",
+  "palese","clamoroso","true af","no cap","assurdo","this is so real",
+  "lowkey d'accordo","fr fr","bro has a point","non potevo dirlo meglio",
+  "too real","finalmente qualcuno lo dice","letteralmente io",
+  "dipende ma tendenzialmente sì","based","W take","hard agree"
 ];
 
-// ─── FAKE AUTHORS per i commenti ──────────────────────────
 const FAKE_AUTHORS = [
-  "marco_r91", "ele_thoughts", "giova_k", "silvia.mp", "fede_wild",
-  "luca.exe", "vale_noir", "toma_says", "chiara_b", "andre_vibe",
-  "mat_flow", "sara.irl", "davide_rc", "nico_takes", "giulia_x",
-  "fra_mode", "alex_drop", "bianca_raw", "pietro_j", "anna_nf",
-  "stefano_real", "laur_says", "simone_k", "marta_v", "enrico_g",
-  "beatrice_irl", "riccardo_m", "serena_w", "filippo_t", "irene_drop",
+  "VectorVoid38",
+  "NeonPulse72",
+  "ShadowByte14",
+  "QuantumRush56",
+  "PixelNova83",
+  "EchoBlaze29",
+  "CyberDrift91",
+  "NovaFlux47",
+  "AlphaGlitch65",
+  "TurboVortex22",
+  "HyperNova39",
+  "ZenithByte58",
+  "OmegaPulse74",
+  "DeltaPhantom11",
+  "CrimsonVector90",
+  "LunarShift36",
+  "GhostMatrix81",
+  "AeroBlitz27",
+  "FusionSpark64",
+  "BinaryStorm52",
+  "SolarByte19",
+  "VoidRunner88",
+  "CyberEcho33",
+  "NeonStriker70",
+  "PulseRider45",
+  "AstroFlare92",
+  "TitanGlitch16",
+  "RapidQuantum61",
+  "EchoVortex08",
+  "DarkNova77",
+  "StormPixel25",
+  "FluxPhantom69",
+  "ShadowCircuit41",
+  "NovaRift53",
+  "VectorBlaze84",
+  "GlitchHunter37",
+  "ByteCrusher20",
+  "HyperCircuit66",
+  "PhantomPulse49",
+  "TurboEcho95",
+  "ZenithStorm13",
+  "CosmicDrift57",
+  "NeonPhantom82",
+  "ApexVector24",
+  "QuantumBlaze73"
 ];
+
+// ─── PARAMETRI SCALABILITÀ ────────────────────────────────
+const TOTAL_REACTIONS = 1000;
+const BATCH_SIZE = 50;
+const COMMENT_PROBABILITY = 0.2;
+const COMMENT_REACTION_PROBABILITY = 0.3;
 
 // ─── HELPERS ──────────────────────────────────────────────
-function pickRandom(arr) {
-  return arr[Math.floor(Math.random() * arr.length)];
+const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function randomDelay() {
+  return Math.floor(Math.random() * 200); // 0–200ms
 }
 
 function randomUUID() {
@@ -116,8 +86,8 @@ function randomUUID() {
   });
 }
 
-// ─── FETCH RECENT POSTS ───────────────────────────────────
-async function getRecentPosts(limit = 50) {
+// ─── FETCH ────────────────────────────────────────────────
+async function getRecentPosts(limit = 100) {
   const { data, error } = await supabase
     .from("posts")
     .select("id")
@@ -128,11 +98,11 @@ async function getRecentPosts(limit = 50) {
     console.error("Errore fetch posts:", error);
     return [];
   }
+
   return data;
 }
 
-// ─── FETCH RECENT COMMENTS ────────────────────────────────
-async function getRecentComments(limit = 20) {
+async function getRecentComments(limit = 50) {
   const { data, error } = await supabase
     .from("comments")
     .select("id, post_id")
@@ -143,104 +113,119 @@ async function getRecentComments(limit = 20) {
     console.error("Errore fetch comments:", error);
     return [];
   }
+
   return data;
 }
 
-// ─── REACT TO A POST ──────────────────────────────────────
-async function reactToPost(postId) {
-  const reactor_id = randomUUID();
-  const emoji = pickRandom(EMOJIS);
+// ─── BULK REACTIONS ───────────────────────────────────────
+async function insertReactionsBatch(posts, size) {
+  const payload = [];
 
-  const { error } = await supabase.from("reactions").insert({
-    post_id: postId,
-    emoji,
-    reactor_id,
-  });
+  for (let i = 0; i < size; i++) {
+    const post = pickRandom(posts);
+
+    payload.push({
+      post_id: post.id,
+      emoji: pickRandom(EMOJIS),
+      reactor_id: randomUUID(),
+    });
+  }
+
+  const { error } = await supabase.from("reactions").insert(payload);
 
   if (error) {
-    console.error(`Errore reaction su post ${postId}:`, error.message);
+    console.error("Errore bulk reactions:", error.message);
   } else {
-    console.log(`✅ Reaction ${emoji} su post ${postId}`);
+    console.log(`🚀 +${size} reactions`);
   }
 }
 
-// ─── COMMENT ON A POST ────────────────────────────────────
-async function commentOnPost(postId) {
-  const author = pickRandom(FAKE_AUTHORS);
-  const text = pickRandom(COMMENTS);
+// ─── BULK COMMENTS ────────────────────────────────────────
+async function insertCommentsBatch(posts, size) {
+  const payload = [];
 
-  const { error } = await supabase.from("comments").insert({
-    post_id: postId,
-    text,
-    author,
-    language: "it",
-    category: "Opinione",
-    mood: "Bored",
-  });
+  for (let i = 0; i < size; i++) {
+    const post = pickRandom(posts);
+
+    payload.push({
+      post_id: post.id,
+      text: pickRandom(COMMENTS),
+      author: pickRandom(FAKE_AUTHORS),
+      language: "it",
+      category: "Opinione",
+      mood: "Bored",
+    });
+  }
+
+  const { error } = await supabase.from("comments").insert(payload);
 
   if (error) {
-    console.error(`Errore commento su post ${postId}:`, error.message);
+    console.error("Errore bulk comments:", error.message);
   } else {
-    console.log(`💬 Commento su post ${postId}: "${text}" da ${author}`);
+    console.log(`💬 +${size} comments`);
   }
 }
 
-// ─── REACT TO A COMMENT ───────────────────────────────────
-async function reactToComment(commentId, postId) {
-  const reactor_id = randomUUID();
-  const reactor_name = pickRandom(FAKE_AUTHORS);
-  const emoji = pickRandom(EMOJIS);
+// ─── COMMENT REACTIONS ────────────────────────────────────
+async function insertCommentReactions(comments, size) {
+  const payload = [];
 
-  const { error } = await supabase.from("comment_reactions").insert({
-    comment_id: commentId,
-    post_id: postId,
-    emoji,
-    reactor_id,
-    reactor_name,
-  });
+  for (let i = 0; i < size; i++) {
+    const c = pickRandom(comments);
+
+    payload.push({
+      comment_id: c.id,
+      post_id: c.post_id,
+      emoji: pickRandom(EMOJIS),
+      reactor_id: randomUUID(),
+      reactor_name: pickRandom(FAKE_AUTHORS),
+    });
+  }
+
+  const { error } = await supabase
+    .from("comment_reactions")
+    .insert(payload);
 
   if (error) {
-    console.error(`Errore reaction su commento ${commentId}:`, error.message);
+    console.error("Errore reactions commenti:", error.message);
   } else {
-    console.log(`✅ Reaction ${emoji} su commento ${commentId}`);
+    console.log(`🔥 +${size} comment reactions`);
   }
 }
 
-// ─── MAIN ─────────────────────────────────────────────────
+// ─── MAIN ENGINE ──────────────────────────────────────────
 async function main() {
-  console.log("🤖 Reactor bot avviato — obiettivo: 100 reazioni sui post...");
+  console.log("🤖 BOT ULTRA AVVIATO");
 
-  const posts = await getRecentPosts(50);
-  if (posts.length === 0) {
-    console.log("Nessun post trovato.");
-    return;
-  }
+  const posts = await getRecentPosts();
+  if (!posts.length) return console.log("No posts.");
 
-  const TOTAL_REACTIONS = 100;
+  const comments = await getRecentComments();
+
   let done = 0;
 
-  for (let i = 0; i < TOTAL_REACTIONS; i++) {
-    const post = pickRandom(posts);
-    await reactToPost(post.id);
-    done++;
+  while (done < TOTAL_REACTIONS) {
+    // REACTIONS
+    await insertReactionsBatch(posts, BATCH_SIZE);
+    done += BATCH_SIZE;
 
-    // Pausa ogni 10 reazioni per non martellare il DB
-    if (done % 10 === 0) {
-      console.log(`⏳ ${done}/${TOTAL_REACTIONS} reazioni completate...`);
-      await new Promise((r) => setTimeout(r, 300));
+    // COMMENTI RANDOM
+    if (Math.random() < COMMENT_PROBABILITY) {
+      await insertCommentsBatch(posts, Math.floor(BATCH_SIZE / 2));
     }
+
+    // REACTIONS AI COMMENTI
+    if (comments.length && Math.random() < COMMENT_REACTION_PROBABILITY) {
+      await insertCommentReactions(comments, Math.floor(BATCH_SIZE / 2));
+    }
+
+    console.log(`⚡ Progress: ${done}/${TOTAL_REACTIONS}`);
+
+    // delay umano
+    await sleep(randomDelay());
   }
 
-  // 30% chance: reagisce anche a qualche commento recente
-  if (Math.random() < 0.3) {
-    const comments = await getRecentComments(10);
-    if (comments.length > 0) {
-      const comment = pickRandom(comments);
-      await reactToComment(comment.id, comment.post_id);
-    }
-  }
-
-  console.log(`✅ Bot completato — ${done} reazioni distribuite sui post.`);
+  console.log("✅ BOT FINITO");
 }
 
 main();

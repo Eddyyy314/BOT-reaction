@@ -2,7 +2,7 @@ name: Reactor Bot
 
 on:
   schedule:
-    - cron: '* * * * *'
+    - cron: '10,30,50 * * * *'
   workflow_dispatch:
 
 jobs:

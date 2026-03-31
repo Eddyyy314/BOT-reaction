@@ -289,6 +289,7 @@ async function main() {
     }
 
     console.log(`⚡ Progress: ${done}/${TOTAL_REACTIONS}`);
+     }
 
   await sleep(randomInterval());
 

@@ -131,16 +131,17 @@ const FAKE_AUTHORS = [
   "GhostMatrix81","AeroBlitz27","FusionSpark64","BinaryStorm52"
 ];
 
-// ─── PARAMETRI ─────────────────────────────────────────────
+// ─── PARAMS ────────────────────────────────────────────────
 const TOTAL_REACTIONS = 1000;
 const BATCH_SIZE = 50;
 
 const COMMENT_PROBABILITY = 0.2;
 const COMMENT_REACTION_PROBABILITY = 0.7;
 
+const GLOBAL_COMMENT_COUNT = {};
+
 // ─── HELPERS ──────────────────────────────────────────────
 const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function randomInterval() {
@@ -155,48 +156,67 @@ function randomUUID() {
   });
 }
 
-// ─── LIMITI COMMENTI ───────────────────────────────────────
+// ─── COMMENT LIMITS ────────────────────────────────────────
 function generateCommentLimits(posts) {
   const limits = {};
 
-  posts.forEach((post) => {
+  for (const post of posts) {
     const r = Math.random();
-
-    if (r < 0.7) limits[post.id] = 1;
-    else if (r < 0.95) limits[post.id] = 2;
-    else limits[post.id] = 3;
-  });
+    limits[post.id] = r < 0.7 ? 1 : 2 + Math.floor(Math.random() * 2);
+  }
 
   return limits;
 }
 
+// ─── SAFE INSERT WRAPPER ───────────────────────────────────
+async function safeInsert(table, payload) {
+  if (!payload.length) return;
+
+  const { error } = await supabase.from(table).insert(payload);
+
+  if (error) {
+    console.error(`❌ Insert error on ${table}:`, error.message);
+  }
+}
+
 // ─── FETCH ────────────────────────────────────────────────
 async function getRecentPosts(limit = 100) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("posts")
     .select("id")
     .order("created_at", { ascending: false })
     .limit(limit);
 
+  if (error) {
+    console.error("❌ Error fetching posts:", error.message);
+    return [];
+  }
+
   return data || [];
 }
 
 async function getRecentComments(limit = 200) {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("comments")
     .select("id, post_id")
     .order("created_at", { ascending: false })
     .limit(limit);
 
+  if (error) {
+    console.error("❌ Error fetching comments:", error.message);
+    return [];
+  }
+
   return data || [];
 }
 
-// ─── REACTIONS POST ────────────────────────────────────────
+// ─── REACTIONS ────────────────────────────────────────────
 async function insertReactionsBatch(posts) {
   const payload = [];
 
   for (let i = 0; i < BATCH_SIZE; i++) {
     const post = pickRandom(posts);
+    if (!post) continue;
 
     payload.push({
       post_id: post.id,
@@ -205,19 +225,19 @@ async function insertReactionsBatch(posts) {
     });
   }
 
-  await supabase.from("reactions").insert(payload);
+  await safeInsert("reactions", payload);
 }
 
 // ─── COMMENTS ──────────────────────────────────────────────
 async function insertCommentsBatch(posts, size, commentLimits) {
   const payload = [];
-  const commentCount = {};
 
   for (let i = 0; i < size; i++) {
     const post = pickRandom(posts);
+    if (!post) continue;
 
-    const current = commentCount[post.id] || 0;
-    const limit = commentLimits[post.id] || 1;
+    const current = GLOBAL_COMMENT_COUNT[post.id] || 0;
+    const limit = commentLimits[post.id] || 3;
 
     if (current >= limit) continue;
 
@@ -230,23 +250,25 @@ async function insertCommentsBatch(posts, size, commentLimits) {
       mood: "Bored",
     });
 
-    commentCount[post.id] = current + 1;
+    GLOBAL_COMMENT_COUNT[post.id] = current + 1;
   }
 
   if (payload.length) {
-    await supabase.from("comments").insert(payload);
+    await safeInsert("comments", payload);
     console.log(`💬 +${payload.length} comments`);
   }
 }
 
-// ─── COMMENT REACTIONS (FIX DISTRIBUITO) ──────────────────
+// ─── COMMENT REACTIONS ─────────────────────────────────────
 async function insertCommentReactionsDistributed(comments) {
-  const count = Math.floor(Math.random() * 3) + 1; // 1–3 reaction
+  if (!comments.length) return;
 
+  const count = Math.floor(Math.random() * 3) + 1;
   const payload = [];
 
   for (let i = 0; i < count; i++) {
     const c = pickRandom(comments);
+    if (!c) continue;
 
     payload.push({
       comment_id: c.id,
@@ -257,43 +279,49 @@ async function insertCommentReactionsDistributed(comments) {
     });
   }
 
-  await supabase.from("comment_reactions").insert(payload);
+  await safeInsert("comment_reactions", payload);
 }
 
 // ─── MAIN ENGINE ──────────────────────────────────────────
 async function main() {
   console.log("🤖 BOT AVVIATO");
 
-  const posts = await getRecentPosts();
-  if (!posts.length) return;
-
-  const comments = await getRecentComments();
-  const commentLimits = generateCommentLimits(posts);
-
-  let done = 0;
-
-  while (done < TOTAL_REACTIONS) {
-    await insertReactionsBatch(posts);
-    done += BATCH_SIZE;
-
-    if (Math.random() < COMMENT_PROBABILITY) {
-      await insertCommentsBatch(
-        posts,
-        Math.floor(BATCH_SIZE / 2),
-        commentLimits
-      );
+  try {
+    const posts = await getRecentPosts();
+    if (!posts.length) {
+      console.log("⚠️ No posts found");
+      return;
     }
 
-    if (comments.length && Math.random() < COMMENT_REACTION_PROBABILITY) {
-      await insertCommentReactionsDistributed(comments);
+    const comments = await getRecentComments();
+    const commentLimits = generateCommentLimits(posts);
+
+    let done = 0;
+
+    while (done < TOTAL_REACTIONS) {
+      await insertReactionsBatch(posts);
+      done += BATCH_SIZE;
+
+      if (Math.random() < COMMENT_PROBABILITY) {
+        await insertCommentsBatch(
+          posts,
+          Math.floor(BATCH_SIZE / 2),
+          commentLimits
+        );
+      }
+
+      if (comments.length && Math.random() < COMMENT_REACTION_PROBABILITY) {
+        await insertCommentReactionsDistributed(comments);
+      }
+
+      console.log(`⚡ Progress: ${done}/${TOTAL_REACTIONS}`);
     }
 
-    console.log(`⚡ Progress: ${done}/${TOTAL_REACTIONS}`);
-     }
-
-  await sleep(randomInterval());
-
-  console.log("✅ BOT FINITO");
+    await sleep(randomInterval());
+    console.log("✅ BOT FINITO");
+  } catch (err) {
+    console.error("🔥 Fatal error:", err);
+  }
 }
 
 main();
